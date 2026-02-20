@@ -1,6 +1,5 @@
 const apiUrl = 'api.php';
 
-// Carregar tarefas assim que a página abrir
 document.addEventListener('DOMContentLoaded', loadTasks);
 
 async function loadTasks() {
@@ -8,24 +7,14 @@ async function loadTasks() {
         const response = await fetch(apiUrl);
         const tasks = await response.json();
         
-        // Verifica se o PHP enviou uma mensagem de erro em vez da lista
-        if (tasks.error) {
-            console.error("Erro vindo do PHP:", tasks.error);
-            return;
-        }
+        document.getElementById('todo').innerHTML = '<h3>📌 To Do</h3>';
+        document.getElementById('doing').innerHTML = '<h3>⚡ In Progress</h3>';
+        document.getElementById('done').innerHTML = '<h3>✅ Done</h3>';
 
-        // Limpa as colunas antes de renderizar (mantendo apenas o título)
-        document.getElementById('todo').innerHTML = '<h3>A Fazer</h3>';
-        document.getElementById('doing').innerHTML = '<h3>Em Andamento</h3>';
-        document.getElementById('done').innerHTML = '<h3>Concluído</h3>';
-
-        // Só tenta rodar o forEach se 'tasks' for uma lista (Array)
         if (Array.isArray(tasks)) {
             tasks.forEach(task => renderTask(task));
         }
-    } catch (e) {
-        console.error("Erro crítico ao carregar tarefas:", e);
-    }
+    } catch (e) { console.error("Error loading tasks:", e); }
 }
 
 function renderTask(task) {
@@ -35,102 +24,81 @@ function renderTask(task) {
     card.id = `task-${task.id}`;
     card.ondragstart = drag;
 
-    // Estrutura do cartão com o botão da Wikipedia
     card.innerHTML = `
-        <h4>${task.title}</h4>
-        <p id="desc-${task.id}">${task.description || 'Sem descrição'}</p>
+        <div class="card-header">
+            <h4>${task.title}</h4>
+            <button class="delete-btn" title="Delete Task" onclick="deleteTask(${task.id})">×</button>
+        </div>
+        <p id="desc-${task.id}">${task.description || 'Learn more via Wikipedia below.'}</p>
         <button class="wiki-btn" onclick="fetchWikipediaData(${task.id}, '${task.title}')">
-            📚 Resumo Wikipedia
+            📚 WIKIPEDIA SUMMARY
         </button>
     `;
 
     document.getElementById(task.status).appendChild(card);
 }
 
-// Função para adicionar nova tarefa via POST
 async function addTask() {
     const titleInput = document.getElementById('taskTitle');
     const descInput = document.getElementById('taskDesc');
+    
+    if (!titleInput.value) return alert("Please provide a title.");
 
-    if (!titleInput.value) {
-        alert("Por favor, digite um título!");
-        return;
-    }
+    await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: titleInput.value, description: descInput.value })
+    });
 
-    const newTask = {
-        title: titleInput.value,
-        description: descInput.value
-    };
-
-    try {
-        const response = await fetch(apiUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(newTask)
-        });
-
-        if (response.ok) {
-            titleInput.value = '';
-            descInput.value = '';
-            loadTasks(); // Atualiza o quadro
-        }
-    } catch (error) {
-        console.error("Erro ao adicionar tarefa:", error);
-    }
+    titleInput.value = '';
+    descInput.value = '';
+    loadTasks();
 }
 
-// INTEGRAÇÃO COM WIKIPEDIA
+async function deleteTask(taskId) {
+    if (!confirm("Permanently delete this task?")) return;
+
+    await fetch(apiUrl, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: taskId })
+    });
+    loadTasks();
+}
+
 async function fetchWikipediaData(taskId, title) {
     const descElement = document.getElementById(`desc-${taskId}`);
-    descElement.innerText = "Buscando...";
-
+    descElement.innerText = "Connecting to Wikipedia...";
+    
     try {
-        // Consome a API REST oficial da Wikipedia
         const response = await fetch(`https://pt.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`);
-        
         if (response.ok) {
             const data = await response.json();
-            descElement.innerText = data.extract || "Artigo encontrado, mas sem resumo disponível.";
+            descElement.innerText = data.extract;
         } else {
-            descElement.innerText = "Não encontramos nada sobre isso na Wikipedia.";
+            descElement.innerText = "No specific Wikipedia article found.";
         }
-    } catch (error) {
-        descElement.innerText = "Erro ao conectar com a Wikipedia.";
-        console.error(error);
-    }
+    } catch (e) { descElement.innerText = "API Error."; }
 }
 
-// LÓGICA DE ARRASTAR E SOLTAR (DRAG AND DROP)
-function allowDrop(ev) {
-    ev.preventDefault();
-}
-
-function drag(ev) {
-    ev.dataTransfer.setData("text", ev.target.id);
-}
+// Drag & Drop
+function allowDrop(ev) { ev.preventDefault(); }
+function drag(ev) { ev.dataTransfer.setData("text", ev.target.id); }
 
 async function drop(ev) {
     ev.preventDefault();
     const cardId = ev.dataTransfer.getData("text");
     const cardElement = document.getElementById(cardId);
-    
-    // Identifica a coluna de destino (garante que caia na div .column)
     let target = ev.target;
-    while (target && !target.classList.contains('column')) {
-        target = target.parentElement;
-    }
+    while (target && !target.classList.contains('column')) target = target.parentElement;
 
     if (target) {
         target.appendChild(cardElement);
-        
-        // Atualiza o status no Banco de Dados via PUT
         const idNumeric = cardId.replace('task-', '');
-        const newStatus = target.id;
-
         await fetch(apiUrl, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id: idNumeric, status: newStatus })
+            body: JSON.stringify({ id: idNumeric, status: target.id })
         });
     }
 }
