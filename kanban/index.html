@@ -1,18 +1,19 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kanban System Pro</title>
+    <title>Smart Kanban System</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary: #4a90e2;
+            --danger: #ff5c5c;
             --bg-body: #f0f2f5;
             --bg-column: #ebecf0;
             --text-main: #172b4d;
             --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            --transition: all 0.2s ease-in-out;
         }
 
         body {
@@ -23,8 +24,14 @@
             padding: 40px 20px;
         }
 
-        h1 { text-align: center; font-weight: 800; color: #333; margin-bottom: 40px; }
+        h1 {
+            text-align: center;
+            font-weight: 800;
+            color: #333;
+            margin-bottom: 40px;
+        }
 
+        /* Input Section */
         .form-container {
             background: white;
             padding: 20px;
@@ -58,8 +65,12 @@
             transition: var(--transition);
         }
 
-        .add-btn:hover { transform: translateY(-2px); filter: brightness(1.1); }
+        .add-btn:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.1);
+        }
 
+        /* Board Layout */
         .board {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -86,6 +97,7 @@
             padding-bottom: 10px;
         }
 
+        /* Task Cards */
         .card {
             background: white;
             padding: 20px;
@@ -95,51 +107,84 @@
             cursor: grab;
             transition: var(--transition);
             border-left: 5px solid var(--primary);
+            position: relative;
         }
 
         .card:hover {
             box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-            transform: scale(1.02);
+            transform: scale(1.01);
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
         }
 
-        .card h4 { margin: 0 0 10px 0; color: #172b4d; }
-        .card p { font-size: 0.9rem; line-height: 1.5; color: #444; }
+        .card h4 { margin: 0 0 10px 0; color: #172b4d; flex: 1; }
 
+        .delete-btn {
+            background: none;
+            border: none;
+            color: #ccc;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: var(--transition);
+            line-height: 1;
+            padding: 0 5px;
+        }
+
+        .delete-btn:hover {
+            color: var(--danger);
+            transform: scale(1.2);
+        }
+
+        .card p {
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: #444;
+            margin-bottom: 15px;
+        }
+
+        /* Wikipedia Button Styling */
         .wiki-btn {
             background-color: #f4f5f7;
             color: #42526e;
             font-size: 0.7rem;
             font-weight: 600;
-            margin-top: 15px;
             border: 1px solid #ddd;
             padding: 8px;
             width: 100%;
             border-radius: 6px;
             cursor: pointer;
+            transition: var(--transition);
         }
 
-        .wiki-btn:hover { background-color: #ebecf0; color: #000; }
+        .wiki-btn:hover {
+            background-color: #ebecf0;
+            color: #000;
+        }
     </style>
 </head>
 <body>
 
-    <h1>🚀 Minha tabela (Kanban)</h1>
+    <h1>🚀 Smart Kanban System</h1>
     
     <div class="form-container">
-        <input type="text" id="taskTitle" placeholder="Título da tarefa (ex: Python)">
-        <input type="text" id="taskDesc" placeholder="Breve descrição">
-        <button class="add-btn" onclick="addTask()">Adicionar</button>
+        <input type="text" id="taskTitle" placeholder="Task Title (e.g., Python)">
+        <input type="text" id="taskDesc" placeholder="Brief description">
+        <button class="add-btn" onclick="addTask()">Add Task</button>
     </div>
 
     <div class="board">
         <div class="column" id="todo" ondrop="drop(event)" ondragover="allowDrop(event)">
-            <h3>📌 A Fazer</h3>
+            <h3>📌 To Do</h3>
         </div>
         <div class="column" id="doing" ondrop="drop(event)" ondragover="allowDrop(event)">
-            <h3>⚡ Em Andamento</h3>
+            <h3>⚡ In Progress</h3>
         </div>
         <div class="column" id="done" ondrop="drop(event)" ondragover="allowDrop(event)">
-            <h3>✅ Concluído</h3>
+            <h3>✅ Done</h3>
         </div>
     </div>
 
